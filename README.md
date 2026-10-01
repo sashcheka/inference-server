@@ -2,7 +2,7 @@
 
 A C++20 learning project for image-classification inference serving with ONNX Runtime. The goal is to make model lifetime, bounded work queues, dynamic batching, execution providers, and latency/throughput trade-offs visible in a small codebase.
 
-The project is implemented in small milestones. It currently includes the generic ONNX runner, ImageNet image preprocessing, bounded queue, single-worker dynamic batcher, aggregate metrics, and a small HTTP API. Benchmarking and the final learning notes are being added next.
+The project is implemented in small milestones. It currently includes the generic ONNX runner, ImageNet image preprocessing, bounded queue, single-worker dynamic batcher, aggregate metrics, a small HTTP API, and a load-test client. The final learning notes are being added next.
 
 ## Planned request flow
 
@@ -63,6 +63,20 @@ Use `--config config/mobilenet.json` with `models/mobilenet.onnx` for MobileNet.
 - `POST /predict` accepts a raw JPEG or PNG body and returns the top five ImageNet labels. If the inference queue is full, it returns HTTP 503.
 
 The HTTP layer uses four handler threads by default and a bounded pending-request queue. The inference queue remains a separate bounded queue so its overload behavior is visible.
+
+## Benchmark
+
+Start the server with the desired provider and batch settings, then explicitly run the modest load test:
+
+```sh
+./build/benchmark \
+  --url http://127.0.0.1:8080 \
+  --image path/to/image.jpg \
+  --concurrency 4 \
+  --duration 10
+```
+
+The client reports request throughput and end-to-end mean/p50/p95/p99 latency. It also reads the server's before/after metrics to report average batch size, queue wait, and model execution duration for the measurement window. Benchmark results depend on the machine, provider, model, and batch settings; no numbers are claimed here.
 
 ## Planned dependencies
 

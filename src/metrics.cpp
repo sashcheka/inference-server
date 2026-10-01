@@ -49,6 +49,8 @@ MetricsSnapshot Metrics::snapshot(std::size_t queue_depth) const {
     const std::lock_guard lock(mutex_);
     auto result = totals_;
     result.queue_depth = queue_depth;
+    result.queue_wait_samples = queue_wait_samples_;
+    result.end_to_end_samples = end_to_end_samples_;
     if (result.batches_total > 0) {
         const auto count = static_cast<double>(result.batches_total);
         result.average_batch_size = batch_size_sum_ / count;

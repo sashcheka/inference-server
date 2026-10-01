@@ -133,6 +133,8 @@ void InferenceServer::register_routes() {
                         {"requests_rejected", snapshot.requests_rejected},
                         {"queue_depth", snapshot.queue_depth},
                         {"batches_total", snapshot.batches_total},
+                        {"queue_wait_samples", snapshot.queue_wait_samples},
+                        {"end_to_end_samples", snapshot.end_to_end_samples},
                         {"average_batch_size", snapshot.average_batch_size},
                         {"average_queue_wait_ms", snapshot.average_queue_wait_ms},
                         {"average_inference_ms", snapshot.average_inference_ms},

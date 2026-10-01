@@ -37,6 +37,8 @@ TEST(MetricsTest, AggregatesRequestBatchAndLatencyMeasurements) {
     EXPECT_EQ(snapshot.requests_failed, 1);
     EXPECT_EQ(snapshot.requests_rejected, 1);
     EXPECT_EQ(snapshot.batches_total, 2);
+    EXPECT_EQ(snapshot.queue_wait_samples, 6);
+    EXPECT_EQ(snapshot.end_to_end_samples, 2);
     EXPECT_EQ(snapshot.queue_depth, 5);
     EXPECT_DOUBLE_EQ(snapshot.average_batch_size, 3.0);
     EXPECT_DOUBLE_EQ(snapshot.average_queue_wait_ms, 3.0);

@@ -103,6 +103,14 @@ if(INFERENCE_BUILD_SERVER)
 
     add_executable(inference-server src/main.cpp)
     target_link_libraries(inference-server PRIVATE inference_http CLI11::CLI11)
+
+    add_executable(benchmark tools/benchmark.cpp)
+    target_link_libraries(benchmark PRIVATE
+        inference_core
+        httplib::httplib
+        nlohmann_json::nlohmann_json
+        CLI11::CLI11
+    )
 endif()
 
 if(INFERENCE_BUILD_TESTS)

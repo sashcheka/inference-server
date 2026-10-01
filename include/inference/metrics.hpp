@@ -12,6 +12,8 @@ struct MetricsSnapshot {
     std::uint64_t requests_failed = 0;
     std::uint64_t requests_rejected = 0;
     std::uint64_t batches_total = 0;
+    std::uint64_t queue_wait_samples = 0;
+    std::uint64_t end_to_end_samples = 0;
     std::size_t queue_depth = 0;
     double average_batch_size = 0.0;
     double average_queue_wait_ms = 0.0;

@@ -164,6 +164,7 @@ TEST(InferenceServerTest, ExposesHealthModelAndMetricsEndpoints) {
     EXPECT_EQ(model_json.at("provider"), "cpu");
     EXPECT_EQ(model_json.at("inputs").at(0).at("shape"), (nlohmann::json::array({-1, 3, 2, 2})));
     EXPECT_EQ(metrics_response->status, 200);
+    EXPECT_TRUE(nlohmann::json::parse(metrics_response->body).contains("queue_wait_samples"));
 }
 
 TEST(InferenceServerTest, PredictsAndRejectsUnsupportedRequestBodies) {
