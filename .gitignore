@@ -1,10 +1,12 @@
 /build*/
 /cmake-build*/
 /out/
+/.deps/
 /models/*.onnx
 /models/*.onnx_data
 /models/*.tar.gz
 /models/*.zip
+/models/imagenet_labels.txt
 *.o
 *.a
 *.dylib
