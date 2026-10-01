@@ -113,6 +113,23 @@ TEST(DynamicBatcherTest, PropagatesInferenceErrorsToEveryRequest) {
     EXPECT_THROW(static_cast<void>(future->get()), std::runtime_error);
 }
 
+TEST(DynamicBatcherTest, RecordsBatchAndQueueMeasurements) {
+    inference::Metrics metrics;
+    inference::DynamicBatcher batcher(
+        {.queue_capacity = 2, .max_batch_size = 1, .max_batch_delay = std::chrono::milliseconds{0}},
+        [](const std::vector<inference::Tensor>& inputs) { return inputs; }, &metrics);
+
+    auto future = batcher.try_submit({scalar_input(1.0F)});
+    ASSERT_TRUE(future.has_value());
+    static_cast<void>(future->get());
+
+    const auto snapshot = metrics.snapshot(batcher.queue_depth());
+    EXPECT_EQ(snapshot.batches_total, 1);
+    EXPECT_DOUBLE_EQ(snapshot.average_batch_size, 1.0);
+    EXPECT_GE(snapshot.average_queue_wait_ms, 0.0);
+    EXPECT_GE(snapshot.average_inference_ms, 0.0);
+}
+
 TEST(DynamicBatcherTest, CloseDrainsAcceptedRequestsBeforeReturning) {
     std::vector<std::int64_t> observed_batch_sizes;
     inference::DynamicBatcher batcher(

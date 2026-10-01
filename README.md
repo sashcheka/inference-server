@@ -25,7 +25,7 @@ The intended server keeps one model session loaded for its lifetime. A classific
 
 ## Current milestone
 
-The repository contains a bounded queue, a generic ONNX Runtime C++ runner, a model-specific ImageNet classification pipeline, and a single-worker dynamic batcher. The runner reads tensor names, shapes, and element types from the ONNX model once at startup, then keeps the session alive for subsequent inference calls. The pipeline decodes JPEG/PNG, resizes and normalizes images into NCHW tensors, then maps logits to ImageNet labels. The queue is provider-independent; producers use non-blocking submission, and closing it wakes consumers and drains accepted work. The batcher collects requests until its size limit or first-request deadline, combines tensors along dimension zero, and splits outputs back in request order.
+The repository contains a bounded queue, a generic ONNX Runtime C++ runner, a model-specific ImageNet classification pipeline, a single-worker dynamic batcher, and thread-safe aggregate metrics. The runner reads tensor names, shapes, and element types from the ONNX model once at startup, then keeps the session alive for subsequent inference calls. The pipeline decodes JPEG/PNG, resizes and normalizes images into NCHW tensors, then maps logits to ImageNet labels. The queue is provider-independent; producers use non-blocking submission, and closing it wakes consumers and drains accepted work. The batcher collects requests until its size limit or first-request deadline, combines tensors along dimension zero, and splits outputs back in request order. Metrics track request outcomes, queue depth, batch sizes, and mean queue, inference, and end-to-end latency.
 
 ```sh
 ./scripts/setup_onnxruntime.sh

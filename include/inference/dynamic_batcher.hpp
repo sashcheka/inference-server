@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "inference/bounded_queue.hpp"
+#include "inference/metrics.hpp"
 #include "inference/tensor.hpp"
 
 namespace inference {
@@ -28,7 +29,8 @@ class DynamicBatcher {
     using BatchInference = std::function<RequestResult(const std::vector<Tensor>&)>;
     using ResultFuture = std::future<RequestResult>;
 
-    DynamicBatcher(BatchingOptions options, BatchInference infer_batch);
+    // metrics is non-owning and must outlive this batcher.
+    DynamicBatcher(BatchingOptions options, BatchInference infer_batch, Metrics* metrics = nullptr);
     ~DynamicBatcher();
 
     DynamicBatcher(const DynamicBatcher&) = delete;
@@ -57,6 +59,7 @@ class DynamicBatcher {
     BatchingOptions options_;
     BoundedQueue<Request> queue_;
     BatchInference infer_batch_;
+    Metrics* metrics_;
     std::jthread worker_;
     std::once_flag close_once_;
 };

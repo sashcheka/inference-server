@@ -64,6 +64,7 @@ if(INFERENCE_BUILD_SERVER)
     add_library(inference_runtime
         src/dynamic_batcher.cpp
         src/image_classifier.cpp
+        src/metrics.cpp
         src/model_runner.cpp
         src/stb_image_implementation.cpp
     )
@@ -112,5 +113,9 @@ if(INFERENCE_BUILD_TESTS)
         add_executable(dynamic_batcher_tests tests/dynamic_batcher_tests.cpp)
         target_link_libraries(dynamic_batcher_tests PRIVATE inference_runtime GTest::gtest_main)
         gtest_discover_tests(dynamic_batcher_tests)
+
+        add_executable(metrics_tests tests/metrics_tests.cpp)
+        target_link_libraries(metrics_tests PRIVATE inference_runtime GTest::gtest_main)
+        gtest_discover_tests(metrics_tests)
     endif()
 endif()

@@ -7,8 +7,12 @@
 
 namespace inference {
 
-DynamicBatcher::DynamicBatcher(BatchingOptions options, BatchInference infer_batch)
-    : options_(options), queue_(options.queue_capacity), infer_batch_(std::move(infer_batch)) {
+DynamicBatcher::DynamicBatcher(BatchingOptions options, BatchInference infer_batch,
+                               Metrics* metrics)
+    : options_(options),
+      queue_(options.queue_capacity),
+      infer_batch_(std::move(infer_batch)),
+      metrics_(metrics) {
     constexpr std::size_t max_supported_batch_size = 1024;
     constexpr auto max_supported_delay = std::chrono::milliseconds{60000};
     if (options_.max_batch_size == 0 || options_.max_batch_size > max_supported_batch_size) {
@@ -148,7 +152,26 @@ void DynamicBatcher::execute(std::vector<Request>& requests) {
     std::vector<RequestResult> results;
     try {
         auto batched_inputs = combine_inputs(requests);
-        auto batched_outputs = infer_batch_(batched_inputs);
+        auto queue_wait_total = std::chrono::steady_clock::duration::zero();
+        for (const auto& request : requests) {
+            queue_wait_total += std::chrono::steady_clock::now() - request.accepted_at;
+        }
+
+        std::vector<Tensor> batched_outputs;
+        const auto inference_start = std::chrono::steady_clock::now();
+        try {
+            batched_outputs = infer_batch_(batched_inputs);
+        } catch (...) {
+            if (metrics_ != nullptr) {
+                metrics_->record_batch(requests.size(), queue_wait_total,
+                                       std::chrono::steady_clock::now() - inference_start);
+            }
+            throw;
+        }
+        if (metrics_ != nullptr) {
+            metrics_->record_batch(requests.size(), queue_wait_total,
+                                   std::chrono::steady_clock::now() - inference_start);
+        }
         results = split_outputs(batched_outputs, requests.size());
     } catch (...) {
         const auto error = std::current_exception();
