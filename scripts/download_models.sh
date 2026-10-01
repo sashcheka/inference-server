@@ -20,12 +20,17 @@ download_checked() {
         mv "${temporary_file}" "${destination}"
     fi
 
-    if command -v sha256sum >/dev/null 2>&1; then
-        printf '%s  %s\n' "${expected_sha256}" "${destination}" | sha256sum --check --status
-    elif command -v shasum >/dev/null 2>&1; then
-        printf '%s  %s\n' "${expected_sha256}" "${destination}" | shasum -a 256 --check --status
+    local actual_sha256
+    if command -v shasum >/dev/null 2>&1; then
+        actual_sha256="$(shasum -a 256 "${destination}" | cut -d ' ' -f 1)"
+    elif command -v sha256sum >/dev/null 2>&1; then
+        actual_sha256="$(sha256sum "${destination}" | cut -d ' ' -f 1)"
     else
         echo "Install sha256sum or shasum to verify model files." >&2
+        exit 1
+    fi
+    if [[ "${actual_sha256}" != "${expected_sha256}" ]]; then
+        echo "SHA-256 mismatch for ${destination}: got ${actual_sha256}" >&2
         exit 1
     fi
 }
