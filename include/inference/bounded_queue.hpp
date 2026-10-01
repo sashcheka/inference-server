@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <condition_variable>
 #include <cstddef>
 #include <deque>
@@ -40,6 +41,25 @@ public:
         std::unique_lock lock(mutex_);
         available_.wait(lock, [this] { return closed_ || !items_.empty(); });
 
+        if (items_.empty()) {
+            return std::nullopt;
+        }
+
+        T item = std::move(items_.front());
+        items_.pop_front();
+        return item;
+    }
+
+    template <typename Rep, typename Period>
+    [[nodiscard]] std::optional<T> pop_for(const std::chrono::duration<Rep, Period>& timeout) {
+        return pop_until(std::chrono::steady_clock::now() + timeout);
+    }
+
+    [[nodiscard]] std::optional<T> pop_until(std::chrono::steady_clock::time_point deadline) {
+        std::unique_lock lock(mutex_);
+        if (!available_.wait_until(lock, deadline, [this] { return closed_ || !items_.empty(); })) {
+            return std::nullopt;
+        }
         if (items_.empty()) {
             return std::nullopt;
         }

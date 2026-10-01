@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <chrono>
 #include <cstddef>
 #include <future>
 #include <thread>
@@ -56,6 +57,14 @@ TEST(BoundedQueueTest, CloseWakesWaitingConsumer) {
     consumer.join();
 
     EXPECT_TRUE(returned_empty.load(std::memory_order_acquire));
+}
+
+TEST(BoundedQueueTest, TimedPopReturnsEmptyThenReceivesItem) {
+    inference::BoundedQueue<int> queue(1);
+
+    EXPECT_FALSE(queue.pop_for(std::chrono::milliseconds(1)).has_value());
+    ASSERT_TRUE(queue.try_push(7));
+    EXPECT_EQ(queue.pop_until(std::chrono::steady_clock::now()), 7);
 }
 
 TEST(BoundedQueueTest, SupportsConcurrentProducers) {
