@@ -25,13 +25,16 @@ The intended server keeps one model session loaded for its lifetime. A classific
 
 ## Current milestone
 
-The bounded queue is a small, provider-independent foundation. Producers use `try_push`, so the HTTP layer can reject work when the queue is full instead of accumulating unbounded memory. Closing the queue wakes the consumer and lets it drain accepted work before it exits.
+The repository currently contains a bounded queue and a generic ONNX Runtime C++ runner. The runner reads tensor names, shapes, and element types from the ONNX model once at startup, then keeps the session alive for subsequent inference calls. The queue is provider-independent; producers use `try_push`, and closing it wakes consumers and drains accepted items.
 
 ```sh
+./scripts/setup_onnxruntime.sh
 cmake -S . -B build
 cmake --build build --parallel 2
 ctest --test-dir build --output-on-failure
 ```
+
+The setup script installs the pinned ONNX Runtime 1.30.0 C/C++ package under `.deps/onnxruntime`. The macOS arm64 package includes the CoreML Execution Provider; the Linux packages use CPU execution. Set `ONNXRUNTIME_ROOT` if the runtime is installed elsewhere.
 
 ## Planned dependencies
 

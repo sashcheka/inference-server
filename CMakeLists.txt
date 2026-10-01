@@ -3,6 +3,10 @@ cmake_minimum_required(VERSION 3.24)
 project(inference_server VERSION 0.1.0 LANGUAGES CXX)
 
 option(INFERENCE_BUILD_TESTS "Build the fast, provider-independent unit tests" ON)
+option(INFERENCE_BUILD_SERVER "Build the ONNX Runtime-backed inference server" ON)
+
+set(ONNXRUNTIME_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.deps/onnxruntime" CACHE PATH
+    "Path to an ONNX Runtime C/C++ distribution")
 
 add_library(inference_core INTERFACE)
 target_compile_features(inference_core INTERFACE cxx_std_20)
@@ -17,6 +21,29 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
         -Wpedantic
         -Wconversion
         -Wsign-conversion
+    )
+endif()
+
+if(INFERENCE_BUILD_SERVER)
+    find_path(ONNXRUNTIME_INCLUDE_DIR onnxruntime_cxx_api.h
+        HINTS "${ONNXRUNTIME_ROOT}/include" NO_DEFAULT_PATH)
+    find_library(ONNXRUNTIME_LIBRARY onnxruntime
+        HINTS "${ONNXRUNTIME_ROOT}/lib" NO_DEFAULT_PATH)
+    if(NOT ONNXRUNTIME_INCLUDE_DIR OR NOT ONNXRUNTIME_LIBRARY)
+        message(FATAL_ERROR
+            "ONNX Runtime was not found. Run scripts/setup_onnxruntime.sh or set ONNXRUNTIME_ROOT.")
+    endif()
+
+    add_library(onnxruntime SHARED IMPORTED GLOBAL)
+    set_target_properties(onnxruntime PROPERTIES
+        IMPORTED_LOCATION "${ONNXRUNTIME_LIBRARY}"
+        INTERFACE_INCLUDE_DIRECTORIES "${ONNXRUNTIME_INCLUDE_DIR}"
+    )
+
+    add_library(inference_runtime src/model_runner.cpp)
+    target_link_libraries(inference_runtime PUBLIC inference_core onnxruntime)
+    set_target_properties(inference_runtime PROPERTIES
+        BUILD_RPATH "${ONNXRUNTIME_ROOT}/lib"
     )
 endif()
 
@@ -41,4 +68,10 @@ if(INFERENCE_BUILD_TESTS)
     target_link_libraries(bounded_queue_tests PRIVATE inference_core GTest::gtest_main)
     include(GoogleTest)
     gtest_discover_tests(bounded_queue_tests)
+
+    if(INFERENCE_BUILD_SERVER)
+        add_executable(model_runner_tests tests/model_runner_tests.cpp)
+        target_link_libraries(model_runner_tests PRIVATE inference_runtime GTest::gtest_main)
+        gtest_discover_tests(model_runner_tests)
+    endif()
 endif()
