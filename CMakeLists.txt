@@ -61,6 +61,26 @@ if(INFERENCE_BUILD_SERVER)
     add_library(stb_image INTERFACE)
     target_include_directories(stb_image SYSTEM INTERFACE "${stb_SOURCE_DIR}")
 
+    set(HTTPLIB_USE_OPENSSL_IF_AVAILABLE OFF CACHE BOOL "Disable unused HTTP TLS support" FORCE)
+    set(HTTPLIB_USE_ZLIB_IF_AVAILABLE OFF CACHE BOOL "Disable unused HTTP compression" FORCE)
+    set(HTTPLIB_USE_BROTLI_IF_AVAILABLE OFF CACHE BOOL "Disable unused HTTP compression" FORCE)
+    set(HTTPLIB_USE_ZSTD_IF_AVAILABLE OFF CACHE BOOL "Disable unused HTTP compression" FORCE)
+    set(HTTPLIB_INSTALL OFF CACHE BOOL "Disable cpp-httplib install rules" FORCE)
+    set(HTTPLIB_TEST OFF CACHE BOOL "Disable upstream cpp-httplib tests" FORCE)
+    FetchContent_Declare(
+        cpp_httplib
+        URL https://github.com/yhirose/cpp-httplib/archive/refs/tags/v0.58.0.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(cpp_httplib)
+
+    FetchContent_Declare(
+        CLI11
+        URL https://github.com/CLIUtils/CLI11/archive/refs/tags/v2.6.2.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(CLI11)
+
     add_library(inference_runtime
         src/dynamic_batcher.cpp
         src/image_classifier.cpp
@@ -77,6 +97,12 @@ if(INFERENCE_BUILD_SERVER)
     set_target_properties(inference_runtime PROPERTIES
         BUILD_RPATH "${ONNXRUNTIME_ROOT}/lib"
     )
+
+    add_library(inference_http src/server.cpp)
+    target_link_libraries(inference_http PUBLIC inference_runtime httplib::httplib)
+
+    add_executable(inference-server src/main.cpp)
+    target_link_libraries(inference-server PRIVATE inference_http CLI11::CLI11)
 endif()
 
 if(INFERENCE_BUILD_TESTS)
@@ -117,5 +143,11 @@ if(INFERENCE_BUILD_TESTS)
         add_executable(metrics_tests tests/metrics_tests.cpp)
         target_link_libraries(metrics_tests PRIVATE inference_runtime GTest::gtest_main)
         gtest_discover_tests(metrics_tests)
+
+        if(INFERENCE_BUILD_SERVER)
+            add_executable(server_tests tests/server_tests.cpp)
+            target_link_libraries(server_tests PRIVATE inference_http GTest::gtest_main)
+            gtest_discover_tests(server_tests)
+        endif()
     endif()
 endif()

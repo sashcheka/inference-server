@@ -2,7 +2,7 @@
 
 A C++20 learning project for image-classification inference serving with ONNX Runtime. The goal is to make model lifetime, bounded work queues, dynamic batching, execution providers, and latency/throughput trade-offs visible in a small codebase.
 
-The project is implemented in small milestones. It currently includes the generic ONNX runner, ImageNet image preprocessing, bounded queue, and single-worker dynamic batcher; HTTP serving and benchmarking are being added next.
+The project is implemented in small milestones. It currently includes the generic ONNX runner, ImageNet image preprocessing, bounded queue, single-worker dynamic batcher, aggregate metrics, and a small HTTP API. Benchmarking and the final learning notes are being added next.
 
 ## Planned request flow
 
@@ -43,6 +43,26 @@ Download model files and ImageNet labels with:
 ```
 
 The model files are kept out of git and verified against SHA-256 before use. Each model's configuration lives in `config/`; preprocessing options are deliberately kept out of the generic `ModelRunner`.
+
+Run the ResNet-18 server from the repository root:
+
+```sh
+./build/inference-server \
+  --model models/resnet18.onnx \
+  --config config/resnet18.json \
+  --provider cpu
+```
+
+Use `--config config/mobilenet.json` with `models/mobilenet.onnx` for MobileNet. The server binds to `127.0.0.1:8080` by default; use `--help` to see the thread, batching, queue, bind, and port options.
+
+## HTTP API
+
+- `GET /health` reports server status and queue depth.
+- `GET /model` returns the loaded model's provider and ONNX tensor metadata.
+- `GET /metrics` returns request counts, batch size, queue depth, and mean latency measurements.
+- `POST /predict` accepts a raw JPEG or PNG body and returns the top five ImageNet labels. If the inference queue is full, it returns HTTP 503.
+
+The HTTP layer uses four handler threads by default and a bounded pending-request queue. The inference queue remains a separate bounded queue so its overload behavior is visible.
 
 ## Planned dependencies
 
