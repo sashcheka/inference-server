@@ -1,0 +1,13 @@
+/build*/
+/cmake-build*/
+/out/
+/models/*.onnx
+/models/*.onnx_data
+/models/*.tar.gz
+/models/*.zip
+*.o
+*.a
+*.dylib
+*.so
+*.dll
+.DS_Store
