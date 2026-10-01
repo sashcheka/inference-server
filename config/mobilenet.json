@@ -1,0 +1,8 @@
+{
+  "width": 224,
+  "height": 224,
+  "resize_shorter": 256,
+  "mean": [0.485, 0.456, 0.406],
+  "std": [0.229, 0.224, 0.225],
+  "labels_file": "../models/imagenet_labels.txt"
+}

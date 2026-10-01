@@ -40,8 +40,38 @@ if(INFERENCE_BUILD_SERVER)
         INTERFACE_INCLUDE_DIRECTORIES "${ONNXRUNTIME_INCLUDE_DIR}"
     )
 
-    add_library(inference_runtime src/model_runner.cpp)
-    target_link_libraries(inference_runtime PUBLIC inference_core onnxruntime)
+    include(FetchContent)
+
+    find_package(nlohmann_json 3.12 CONFIG QUIET)
+    if(NOT nlohmann_json_FOUND)
+        FetchContent_Declare(
+            nlohmann_json
+            URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+            DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+        )
+        FetchContent_MakeAvailable(nlohmann_json)
+    endif()
+
+    FetchContent_Declare(
+        stb
+        URL https://github.com/nothings/stb/archive/013ac3beddff3dbffafd5177e7972067cd2b5083.tar.gz
+        DOWNLOAD_EXTRACT_TIMESTAMP TRUE
+    )
+    FetchContent_MakeAvailable(stb)
+    add_library(stb_image INTERFACE)
+    target_include_directories(stb_image SYSTEM INTERFACE "${stb_SOURCE_DIR}")
+
+    add_library(inference_runtime
+        src/image_classifier.cpp
+        src/model_runner.cpp
+        src/stb_image_implementation.cpp
+    )
+    target_link_libraries(inference_runtime PUBLIC
+        inference_core
+        nlohmann_json::nlohmann_json
+        onnxruntime
+        stb_image
+    )
     set_target_properties(inference_runtime PROPERTIES
         BUILD_RPATH "${ONNXRUNTIME_ROOT}/lib"
     )
@@ -73,5 +103,9 @@ if(INFERENCE_BUILD_TESTS)
         add_executable(model_runner_tests tests/model_runner_tests.cpp)
         target_link_libraries(model_runner_tests PRIVATE inference_runtime GTest::gtest_main)
         gtest_discover_tests(model_runner_tests)
+
+        add_executable(image_classifier_tests tests/image_classifier_tests.cpp)
+        target_link_libraries(image_classifier_tests PRIVATE inference_runtime GTest::gtest_main)
+        gtest_discover_tests(image_classifier_tests)
     endif()
 endif()

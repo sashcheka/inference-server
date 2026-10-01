@@ -6,6 +6,7 @@
 /models/*.onnx_data
 /models/*.tar.gz
 /models/*.zip
+/models/imagenet_labels.txt
 *.o
 *.a
 *.dylib
